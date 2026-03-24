@@ -97,7 +97,6 @@ void Gui::ShowControlsInfo()
     ImGui::Text("WASD - Movement");
     ImGui::Text("Space - Up");
     ImGui::Text("Shift - Down");
-    ImGui::Text("TODO:\n FIX ProcessKeyboardWithDepthLimit()\nPlayer can go below plane using other keys than shift");
 
     ImGui::End();
 }

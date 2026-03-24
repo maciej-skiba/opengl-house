@@ -78,36 +78,35 @@ public:
     {
         float velocity = CameraSpeed * Window::deltaTime;
         float depthLimit = 0.1f;
+        glm::vec3 next;
 
         switch (direction)
         {
             case FORWARD:
-                targetPosition += Front * velocity;
+                next = targetPosition + Front * velocity;
+                if (next.y > depthLimit) targetPosition = next;
                 break;
-
             case BACKWARD:
-                targetPosition -= Front * velocity;
+                next = targetPosition - Front * velocity;
+                if (next.y > depthLimit) targetPosition = next;
                 break;
-
             case LEFT:
-                targetPosition -= Right * velocity;
+                next = targetPosition - Right * velocity;
+                if (next.y > depthLimit) targetPosition = next;
                 break;
-
             case RIGHT:
-                targetPosition += Right * velocity;
+                next = targetPosition + Right * velocity;
+                if (next.y > depthLimit) targetPosition = next;
                 break;
-
             case UP:
-                targetPosition += Up * velocity;
+                next = targetPosition + Up * velocity;
+                if (next.y > depthLimit) targetPosition = next;
                 break;
 
             case DOWN:
-            {
-                glm::vec3 next = targetPosition - Up * velocity;
-
+                next = targetPosition - Up * velocity;
                 if (next.y > depthLimit) targetPosition = next;
                 break;
-            }
             default:
                 break;
         }
