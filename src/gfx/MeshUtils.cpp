@@ -1,14 +1,12 @@
 #include "common/gl_includes.hpp"
 #include "gfx/MeshUtils.hpp"
 
-void CreateBoxVao(unsigned int &VAO, float* boxVertices, int bufferSize)
+void CreateBoxVao(unsigned int &VAO, unsigned int& VBO, float* boxVertices, int bufferSize)
 {
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
-    unsigned int VBO;
     glGenBuffers(1, &VBO);
-
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, bufferSize * sizeof(float), boxVertices, GL_STATIC_DRAW);
 
