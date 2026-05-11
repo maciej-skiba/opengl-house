@@ -2,7 +2,7 @@
 #include "gfx/Input.hpp"
 #include "core/Window.hpp"
 
-bool spacePressedLastFrame = false;
+bool fPressedLastFrame = false;
 
 void ProcessInput(GLFWwindow* window, Camera* camera, short &postProcShaderIndex, bool &antialiasingOn)
 {
@@ -24,9 +24,9 @@ void ProcessInput(GLFWwindow* window, Camera* camera, short &postProcShaderIndex
     if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS) postProcShaderIndex = 5;
 
     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) {
-        if (!spacePressedLastFrame) { antialiasingOn = !antialiasingOn; spacePressedLastFrame = true; }
+        if (!fPressedLastFrame) { antialiasingOn = !antialiasingOn; fPressedLastFrame = true; }
     } else {
-        spacePressedLastFrame = false;
+        fPressedLastFrame = false;
     }
 
     camera->Position = glm::mix(camera->Position, camera->targetPosition, camera->moveSmoothing);
