@@ -34,12 +34,17 @@ int main(void)
 
     Gui::ImGuiInit(window);
 
-    unsigned int planeVao, planeVbo, skyboxVao, skyboxVbo;
+    unsigned int skyboxVao, skyboxVbo;
     
-    const char* cubeVertShaderPath = "../shaders/plane/plane_vert.glsl";
-    const char* cubeFragShaderPath = "../shaders/plane/plane_frag.glsl";
+    const char* terrainVertShaderPath = "../shaders/terrain/terrain_vert.glsl";
+    const char* terrainFragShaderPath = "../shaders/terrain/terrain_frag.glsl";
 
-    Shader planeShader(cubeVertShaderPath, cubeFragShaderPath);
+    Shader terrainShader(terrainVertShaderPath, terrainFragShaderPath);
+
+    const char* terrainPolygonVertShaderPath = "../shaders/terrain/terrain_polygon_vert.glsl";
+    const char* terrainPolygonFragShaderPath = "../shaders/terrain/terrain_polygon_frag.glsl";
+
+    Shader terrainPolygonShader(terrainPolygonVertShaderPath, terrainPolygonFragShaderPath);
 
     const char* houseVertShaderPath = "../shaders/house/house_vert.glsl";
     const char* houseFragShaderPath = "../shaders/house/house_frag.glsl";
@@ -53,12 +58,11 @@ int main(void)
 
     int numOfVerticesInBox = 36;
 
-    glm::vec3 planePosition = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 planeColor =  glm::vec3(0.15, 0.5, 0.1);  //green
-    glm::vec3 polygonColor =  glm::vec3(0.9, 1, 0.6);; //orange
+    glm::vec3 terrainPosition = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 terrainColor =  glm::vec3(0.12f, 0.48f, 0.07f);  //dark green
+    glm::vec3 terrainPolygonColor =  glm::vec3(0.75f, 1.0f, 0.75f); //light green
     
     int boxBufferSize = numOfVerticesInBox * 6;
-    CreateBoxVao(planeVao, planeVbo, planeVertices, boxBufferSize);
     CreateBoxVao(skyboxVao, skyboxVbo, skyboxVertices, boxBufferSize);
 
     //screen quad for postprocessing
@@ -86,7 +90,7 @@ int main(void)
     float nearClippingPlane = 0.1f;
     float farClippingPlane = 100.0f;
 
-    glm::mat4 planeModelMatrix = identityMatrix;
+    glm::mat4 terrainModelMatrix = identityMatrix;
     glm::mat4 houseModelMatrix = identityMatrix;
     glm::mat4 skyboxModelMatrix = identityMatrix;
 
@@ -97,8 +101,34 @@ int main(void)
             nearClippingPlane,
             farClippingPlane);
 
-    planeShader.UseProgram();
-    planeShader.SetUniformMat4("projection", projectionMatrix);
+    terrainShader.UseProgram();
+    terrainShader.SetUniformMat4("projection", projectionMatrix);
+    
+    // Terrain material
+    terrainShader.SetUniformVec3("albedo", glm::vec3(0.12f, 0.48f, 0.07f));
+    terrainShader.SetUniformFloat("metallic", 0.0f);
+    terrainShader.SetUniformFloat("roughness", 0.9f);
+    terrainShader.SetUniformFloat("ao", 1.0f);
+
+    // Directional light
+    terrainShader.SetUniformVec3("dirLightDirection", glm::normalize(glm::vec3(-0.3f, -1.0f, -0.2f)));
+    terrainShader.SetUniformVec3("dirLightColor", glm::vec3(2.0f, 2.0f, 2.0f));
+
+    // Fog
+    terrainShader.SetUniformVec3("fogColor", glm::vec3(0.69f, 0.76f, 0.82f));
+    terrainShader.SetUniformFloat("fogDensity", 0.006f);
+
+    houseShader.UseProgram();
+    houseShader.SetUniformMat4("projection", projectionMatrix);
+
+    skyboxShader.UseProgram();
+    skyboxShader.SetUniformMat4("projection", projectionMatrix);
+
+    //
+    terrainPolygonShader.UseProgram();
+    terrainPolygonShader.SetUniformMat4("projection", projectionMatrix);
+    terrainPolygonShader.SetUniformVec3("polygonModeColor", terrainPolygonColor);
+
 
     houseShader.UseProgram();
     houseShader.SetUniformMat4("projection", projectionMatrix);
@@ -203,7 +233,7 @@ int main(void)
 
     // ---------------------------------
 
-    const char* houseModelPath = "../assets/models/house/HouseSuburban.obj";
+    const char* houseModelPath = "../assets/models/house/HouseSuburban.glb";
     Model houseModel(houseModelPath);
 
     std::cout << "Entering main loop\n";
@@ -251,34 +281,30 @@ int main(void)
         
         // -house-
         houseShader.UseProgram();
-        houseModelMatrix = glm::translate(identityMatrix, planePosition);
+        houseModelMatrix = glm::translate(identityMatrix, terrainPosition);
         houseModelMatrix = glm::scale(houseModelMatrix, glm::vec3(0.002f));
         houseShader.SetUniformMat4("model", houseModelMatrix);
         houseShader.SetUniformMat4("view", mainCamera->GetViewMatrix());
 
-        houseShader.SetUniformVec3("cameraPos", mainCamera->Position);
-        houseShader.SetUniformVec3("dirLight[0].position", dirLightPosition);
-        houseShader.SetUniformVec3("dirLight[0].ambient", dirLightColor * 0.1f);
-        houseShader.SetUniformVec3("dirLight[0].diffuse", dirLightColor);
-        houseShader.SetUniformVec3("dirLight[0].specular", dirLightColor);
+        houseShader.SetUniformVec3("lightPosition", glm::vec3(0.0f, 5.0f, 0.0f));
+        houseShader.SetUniformVec3("lightColor", glm::vec3(60.0f, 60.0f, 60.0f));
+        houseShader.SetUniformVec3("camPos", mainCamera->Position);
 
         houseModel.Draw(houseShader);
 
         // -------
 
-        // -plane-
-        glBindVertexArray(planeVao);
+        // -terrain-
+        glBindVertexArray(terrainVAO);
 
-        planeShader.UseProgram();
-        planeShader.SetUniformMat4("view", mainCamera->GetViewMatrix());
-        planeModelMatrix = glm::translate(identityMatrix, planePosition);
-        planeModelMatrix = glm::scale(planeModelMatrix, glm::vec3(0.5f));
-        planeShader.SetUniformMat4("model", planeModelMatrix);
-        planeShader.SetUniformVec3("lightColor", polygonColor);
+        terrainPolygonShader.UseProgram();
+      
+        terrainPolygonShader.SetUniformMat4("model", terrainModelMatrix);
+        terrainPolygonShader.SetUniformMat4("view", mainCamera->GetViewMatrix());
+
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         
         // draw mesh
-        glBindVertexArray(terrainVAO);
     
         // render the mesh triangle strip by triangle strip - each row at a time
         for(unsigned int strip = 0; strip < NUM_STRIPS; ++strip)
@@ -291,7 +317,11 @@ int main(void)
                 * strip)); // offset to starting index
         }
 
-        planeShader.SetUniformVec3("lightColor", planeColor);
+        terrainShader.UseProgram();
+        terrainShader.SetUniformMat4("model", terrainModelMatrix);
+        terrainShader.SetUniformMat4("view", mainCamera->GetViewMatrix());
+        terrainShader.SetUniformVec3("camPos", mainCamera->Position);
+
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
         for(unsigned int strip = 0; strip < NUM_STRIPS; ++strip)
@@ -352,8 +382,8 @@ int main(void)
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(1, &planeVao);
-    glDeleteBuffers(1, &planeVbo);
+    glDeleteVertexArrays(1, &terrainVAO);
+    glDeleteBuffers(1, &terrainVBO);
     glDeleteFramebuffers(1, &multisampleFbo);
 
     glfwTerminate();

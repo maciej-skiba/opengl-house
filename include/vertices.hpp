@@ -1,4 +1,4 @@
-float planeVertices[] = {
+float terrainVertices[] = {
     -15.0f, -20.0f, -15.0f,
      15.0f, -20.0f, -15.0f,
      15.0f,  0.05f, -15.0f,

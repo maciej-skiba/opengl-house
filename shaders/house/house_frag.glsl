@@ -1,154 +1,139 @@
 #version 330 core
 
-#define NUM_OF_DIR_LIGHTS 1
-#define NUM_OF_POINT_LIGHTS 2
-#define NUM_OF_SPOT_LIGHTS 1
-
-struct Material {
-    sampler2D diffuse;
-    sampler2D specular;
-    float shininess;
-};
-
-struct DirLight {
-    vec3 position;
-
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-};
-
-struct PointLight {
-    vec3 position;
-
-    float constant;
-    float linear;
-    float quadratic;
-
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-};
-
-struct SpotLight {
-    vec3 position;
-    vec3 direction;
-    float cutOff;
-    float outerCutOff;
-
-    float constant;
-    float linear;
-    float quadratic;
-
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular; 
-    
-    bool on;
-};
-
-in vec3 normal;
-in vec3 fragPos;
-in vec2 texCoord;
-
 out vec4 FragColor;
 
-uniform sampler2D texture_diffuse1;
-uniform sampler2D texture_specular1;
-uniform vec3 cameraPos;
+in vec2 TexCoords;
+in vec3 WorldPos;
+in vec3 Normal;
 
-uniform DirLight dirLight[NUM_OF_DIR_LIGHTS];
-uniform PointLight pointLight[NUM_OF_POINT_LIGHTS];
-uniform SpotLight spotLight[NUM_OF_SPOT_LIGHTS];
+struct Material
+{
+    sampler2D texture_albedo1;
+    sampler2D texture_metallicRoughness1;
+};
 
-float shininess = 32.0f;
+uniform Material material;
 
-vec3 CalcDirLight(DirLight dirLight, vec3 normal, vec3 viewDir);
-vec3 CalcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewDir);
-vec3 CalcSpotLight(SpotLight spotLight, vec3 normal, vec3 fragPos, vec3 viewDir);
-float GetAttenuation(float constant, float linear, float quadratic, float distance);
+uniform vec3 lightPosition;
+uniform vec3 lightColor;
+
+uniform vec3 camPos;
+
+const float PI = 3.14159265359;
+
+float DistributionGGX(vec3 N, vec3 H, float roughness);
+float GeometrySchlickGGX(float NdotV, float roughness);
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
+vec3 fresnelSchlick(float cosTheta, vec3 F0);
 
 void main()
-{    
-    vec3 norm = normalize(normal);
-    vec3 cameraDir = normalize(cameraPos - fragPos);
-    vec3 result = vec3(0);
+{
+    vec3 albedo = texture(material.texture_albedo1, TexCoords).rgb;
 
-    for (int dirLightIndex = 0; dirLightIndex < NUM_OF_DIR_LIGHTS; dirLightIndex++)
-    {
-        result += CalcDirLight(dirLight[dirLightIndex], norm, cameraDir);
-    }
+    // glTF metallic-roughness convention:
+    // G = roughness
+    // B = metallic
+    vec3 mr = texture(material.texture_metallicRoughness1, TexCoords).rgb;
+    float roughness = mr.g;
+    float metallic  = mr.b;
 
-    FragColor = vec4(result, 1.0f);
+    float ao = 1.0;
+
+    vec3 N = normalize(Normal);
+    vec3 V = normalize(camPos - WorldPos);
+
+    vec3 F0 = vec3(0.04);
+    F0 = mix(F0, albedo, metallic);
+
+    vec3 Lo = vec3(0.0);
+
+    vec3 L = normalize(lightPosition - WorldPos);
+    vec3 H = normalize(V + L);
+
+    float distance = length(lightPosition - WorldPos);
+    float attenuation = 1.0 / (distance * distance);
+    vec3 radiance = lightColor * attenuation;
+
+    float NDF = DistributionGGX(N, H, roughness);
+    float G   = GeometrySmith(N, V, L, roughness);
+    vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+
+    kD *= 1.0 - metallic;
+
+    vec3 numerator = NDF * G * F;
+
+    float denominator =
+        4.0 *
+        max(dot(N, V), 0.0) *
+        max(dot(N, L), 0.0)
+        + 0.0001;
+
+    vec3 specular = numerator / denominator;
+
+    float NdotL = max(dot(N, L), 0.0);
+
+    Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+
+    vec3 ambient = vec3(0.03) * albedo * ao;
+
+    vec3 color = ambient + Lo;
+
+    // HDR tonemapping
+    color = color / (color + vec3(1.0));
+
+    // gamma correction
+    color = pow(color, vec3(1.0 / 2.2));
+
+    FragColor = vec4(color, 1.0);
 }
 
-vec3 CalcDirLight(DirLight dirLight, vec3 normal, vec3 viewDir)
+float DistributionGGX(vec3 N, vec3 H, float roughness)
 {
-    vec3 ambient = dirLight.ambient * vec3(texture(texture_diffuse1, texCoord));
+    float a = roughness * roughness;
+    float a2 = a * a;
 
-    vec3 lightDirection = normalize(dirLight.position - fragPos);
-    float diffuseStrength = max(dot(normal, lightDirection), 0.0f);
-    vec3 diffuse = dirLight.diffuse * diffuseStrength * vec3(texture(texture_diffuse1, texCoord));
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
 
-    vec3 reflectedLight = reflect(-lightDirection, normal);
-    float spec = pow(max(dot(reflectedLight, viewDir), 0.0f), shininess);
-    vec3 specular = dirLight.specular * vec3(texture(texture_specular1, texCoord)) * spec;
+    float numerator = a2;
 
-    return ambient + diffuse + specular;
+    float denominator =
+        NdotH2 * (a2 - 1.0) + 1.0;
+
+    denominator = PI * denominator * denominator;
+
+    return numerator / denominator;
 }
 
-vec3 CalcPointLight(PointLight pointLight, vec3 normal, vec3 fragPos, vec3 viewDir)
+float GeometrySchlickGGX(float NdotV, float roughness)
 {
-    float distance = length(fragPos - pointLight.position);
-    float attenuation = GetAttenuation(pointLight.constant, pointLight.linear, pointLight.quadratic, distance);
-    vec3 ambient = pointLight.ambient * vec3(texture(texture_diffuse1, texCoord));
+    float r = roughness + 1.0;
+    float k = (r * r) / 8.0;
 
-    vec3 lightDirection = normalize(pointLight.position - fragPos);
-    float diffuseStrength = max(dot(normal, lightDirection), 0.0f);
-    vec3 diffuse = pointLight.diffuse * diffuseStrength * vec3(texture(texture_diffuse1, texCoord));
+    float numerator = NdotV;
+    float denominator = NdotV * (1.0 - k) + k;
 
-    vec3 reflectedLight = reflect(-lightDirection, normal);
-    float spec = pow(max(dot(reflectedLight, viewDir), 0.0f), shininess);
-    vec3 specular = pointLight.specular * vec3(texture(texture_specular1, texCoord)) * spec;
-
-    ambient *= attenuation;
-    diffuse *= attenuation;
-    specular *= attenuation;
-
-    return ambient + diffuse + specular;
+    return numerator / denominator;
 }
 
-vec3 CalcSpotLight(SpotLight spotLight, vec3 normal, vec3 fragPos, vec3 viewDir)
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
 {
-    if (!spotLight.on) return vec3(0.0f);
-    
-    vec3 lightToFragDir = normalize(fragPos - spotLight.position);
-    float thetaDotProduct = dot(lightToFragDir, normalize(spotLight.direction));
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
 
-    if (thetaDotProduct < spotLight.outerCutOff)
-        return vec3(0.0f);
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
 
-    float epsilon = spotLight.cutOff - spotLight.outerCutOff;
-    float intensity = clamp((thetaDotProduct - spotLight.outerCutOff) / epsilon, 0.0, 1.0);
-
-    float distance = length(fragPos - spotLight.position);
-    float attenuation = GetAttenuation(spotLight.constant, spotLight.linear, spotLight.quadratic, distance);
-
-    vec3 ambient = spotLight.ambient * vec3(texture(texture_diffuse1, texCoord));
-    float diffuseStrength = max(dot(normal, -lightToFragDir), 0.0f);
-    vec3 diffuse = spotLight.diffuse * diffuseStrength * vec3(texture(texture_diffuse1, texCoord));
-    vec3 reflectedLight = reflect(lightToFragDir, normal);
-    float spec = pow(max(dot(reflectedLight, viewDir), 0.0f), shininess);
-    vec3 specular = spotLight.specular * vec3(texture(texture_specular1, texCoord)) * spec;
-
-    ambient *= attenuation;
-    diffuse *= attenuation * intensity;
-    specular *= attenuation * intensity;
-
-    return ambient + diffuse + specular;
+    return ggx1 * ggx2;
 }
 
-float GetAttenuation(float constant, float linear, float quadratic, float distance)
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
-    return 1.0 / (constant + linear * distance + quadratic * (distance * distance));
+    return F0 + (1.0 - F0) * pow(
+        clamp(1.0 - cosTheta, 0.0, 1.0),
+        5.0
+    );
 }
