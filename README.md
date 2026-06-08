@@ -1,25 +1,26 @@
 <h1>OpenGL "House"</h1>
 <br/>
-<img width="1236" height="811" alt="framebuffers" src="https://github.com/user-attachments/assets/b0508c16-d523-4118-b46d-4a0245a251a4" />
-<img width="1693" height="1168" alt="sklejka" src="https://github.com/user-attachments/assets/b2d3087f-b613-416a-835f-602c05fef425" />
+<img width="1390" height="888" alt="image" src="https://github.com/user-attachments/assets/b3d1d4a2-6c0f-425a-8bb6-522b6e8a0edf" />
+<img width="1411" height="893" alt="image" src="https://github.com/user-attachments/assets/b164d94c-c864-40af-815c-c894929af373" />
+
 <br/>
 <h2>
   OpenGL (C++) 3D scene with post-processing effects, MSAA, skybox and generated terrain
 </h2>
 <ul>
   <li>
-    Multiple post-processing effects to choose (implemented using two framebuffers)
+    Implemented PBR material rendering for Assimp-loaded GLB models
   </li>
   <li>
-    Antialiasing (MSAA)
+    Added framebuffer-based post-processing effects
   </li>
   <li>
-    Skybox implemented with cubemap 
+    Implemented MSAA antialiasing
   </li>
   <li>
-    Procedurally generated terrain
+    Added cubemap skybox rendering
   </li>
   <li>
-    3D models loaded with Assimp and FPS-style camera system
+    Implemented procedurally generated terrain
   </li>
 </ul>
