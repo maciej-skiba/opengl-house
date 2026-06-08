@@ -5,7 +5,7 @@
 
 <br/>
 <h2>
-  OpenGL (C++) 3D scene with post-processing effects, MSAA, skybox and generated terrain
+  OpenGL (C++) 3D scene with PBR, post-processing effects, MSAA, skybox and generated terrain
 </h2>
 <ul>
   <li>
