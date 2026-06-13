@@ -1,5 +1,5 @@
-#include "common/gl_includes.hpp"
-#include "gfx/MeshUtils.hpp"
+#include "helpers/gl_includes.hpp"
+#include "MeshUtils.hpp"
 #include <vector>
 #include <stb_image.h>
 

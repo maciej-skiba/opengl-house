@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include <gfx/Mesh.hpp>
+#include <Mesh.hpp>
 #include <stb_image.h>
 
 #include <assimp/Importer.hpp>

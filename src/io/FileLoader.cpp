@@ -1,5 +1,5 @@
-#include "common/gl_includes.hpp"
-#include "io/FileLoader.hpp"
+#include "helpers/gl_includes.hpp"
+#include "FileLoader.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>

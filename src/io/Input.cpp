@@ -1,6 +1,6 @@
-#include "common/gl_includes.hpp"
-#include "gfx/Input.hpp"
-#include "core/Window.hpp"
+#include "helpers/gl_includes.hpp"
+#include "Input.hpp"
+#include "rendering/Window.hpp"
 
 bool fPressedLastFrame = false;
 

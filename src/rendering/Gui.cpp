@@ -1,4 +1,4 @@
-#include "gfx/Gui.hpp"
+#include "Gui.hpp"
 
 bool Gui::g_VSync = true;
 bool Gui::g_Wireframe = false;

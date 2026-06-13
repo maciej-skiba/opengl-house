@@ -1,4 +1,4 @@
-#include "gfx/Mesh.hpp"
+#include "Mesh.hpp"
 
 Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
 {

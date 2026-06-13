@@ -1,4 +1,4 @@
-#include "common/gl_includes.hpp"
+
 #include <iostream>
 #include <memory>
 #include <assimp/Importer.hpp>
@@ -6,19 +6,20 @@
 #include <assimp/postprocess.h>
 #include <unordered_map>
 
-#include "vertices.hpp" 
-#include "camera.hpp"
+#include "helpers/gl_includes.hpp"
+#include "helpers/vertices.hpp" 
+#include "helpers/Config.hpp"
 
-#include "app/Config.hpp"
-#include "core/Window.hpp"
-#include "core/InputCallbacks.hpp"
-#include "gfx/Input.hpp"
-#include "gfx/MeshUtils.hpp"
-#include "gfx/Model.hpp"
-#include "gfx/Attenuation.hpp"
-#include "gfx/Gui.hpp"
 #include "io/FileLoader.hpp"
-#include "Shader.hpp"
+#include "io/InputCallbacks.hpp"
+#include "io/Input.hpp"
+
+#include "rendering/camera.hpp"
+#include "rendering/MeshUtils.hpp"
+#include "rendering/Model.hpp"
+#include "rendering/Gui.hpp"
+#include "rendering/Shader.hpp"
+#include "rendering/Window.hpp"
 
 const glm::mat4 identityMatrix = glm::mat4(1.0f);
 

@@ -1,7 +1,8 @@
-#include "common/gl_includes.hpp"
-#include "app/Config.hpp"
-#include "core/Window.hpp"
-#include "core/InputCallbacks.hpp"
+#include "helpers/gl_includes.hpp"
+#include "helpers/Config.hpp"
+#include "io/InputCallbacks.hpp"
+#include "Window.hpp"
+
 #include <iostream>
 
 float Window::deltaTime = 0.0f;

@@ -1,6 +1,6 @@
 #pragma once
 struct GLFWwindow;
-#include "camera.hpp"
+#include "rendering/camera.hpp"
 
 void ProcessInput(GLFWwindow* window, Camera* camera, short &postProcShaderIndex, bool &antialiasingOn);
 

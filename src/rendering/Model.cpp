@@ -1,4 +1,4 @@
-#include <gfx/Model.hpp>
+#include <Model.hpp>
 
 void Model::loadGlbModel(std::string path)
 {

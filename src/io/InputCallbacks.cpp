@@ -1,6 +1,6 @@
-#include "common/gl_includes.hpp"
-#include "core/InputCallbacks.hpp"
-#include "camera.hpp"
+#include "helpers/gl_includes.hpp"
+#include "InputCallbacks.hpp"
+#include "rendering/camera.hpp"
 
 // stan myszy ukryty lokalnie:
 static bool  firstMouse = true;
