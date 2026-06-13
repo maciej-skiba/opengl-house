@@ -1,4 +1,6 @@
-float terrainVertices[] = {
+#pragma once
+
+inline float terrainVertices[] = {
     -15.0f, -20.0f, -15.0f,
      15.0f, -20.0f, -15.0f,
      15.0f,  0.05f, -15.0f,
@@ -42,7 +44,7 @@ float terrainVertices[] = {
     -15.0f,  0.05f, -15.0f
 };
 
-float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
+inline float quadVertices[] = { // vertex attributes for a quad that fills the entire screen in Normalized Device Coordinates.
     // positions   // texCoords
     -1.0f,  1.0f,  0.0f, 1.0f,
     -1.0f, -1.0f,  0.0f, 0.0f,
@@ -53,7 +55,7 @@ float quadVertices[] = { // vertex attributes for a quad that fills the entire s
      1.0f,  1.0f,  1.0f, 1.0f
 };
 
-float skyboxVertices[] = {
+inline float skyboxVertices[] = {
     // positions          
     -1.0f,  1.0f, -1.0f,
     -1.0f, -1.0f, -1.0f,

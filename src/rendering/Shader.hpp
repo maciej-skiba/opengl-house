@@ -20,6 +20,8 @@ public:
 
     mutable std::unordered_map<std::string, GLint> uniformLocationCache;
 
+    Shader() = delete;
+
     Shader(const char* vertexPath, const char* fragmentPath)
     {
         std::string vertexCode;

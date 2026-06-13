@@ -12,7 +12,7 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(assimp CONFIG REQUIRED)
 
 set(CORE_FILES
-    src/core/app.cpp
+    src/core/App.cpp
 )
 
 set(EXTERNAL_FILES

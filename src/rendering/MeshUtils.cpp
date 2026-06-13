@@ -27,7 +27,7 @@ void GenerateTerrain(int &height, int &width,GLuint &terrainVAO, GLuint &terrain
 
     // vertex generation
     std::vector<float> vertices;
-    float yScale = 64.0f / 256.0f, yShift = -25.5f;  // apply a scale+shift to the height data
+    float yScale = 64.0f / 256.0f, yShift = -25.7f;  // apply a scale+shift to the height data
     for(unsigned int i = 0; i < height; i++)
     {
         for(unsigned int j = 0; j < width; j++)
