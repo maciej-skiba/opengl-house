@@ -37,116 +37,17 @@ void App::Update()
 {
     Window::UpdateDeltaTime();
 
-    if (renderer->antialiasingOn)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, renderer->multisampleFbo);
-    }
-    else
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, renderer->intermediateFbo);
-    }
+    this->PickFramebuffer(renderer.get());
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
     
-    // -house-
-    renderer->houseShader.UseProgram();
-    renderer->houseModelMatrix = glm::translate(identityMatrix, renderer->terrainPosition);
-    renderer->houseModelMatrix = glm::scale(renderer->houseModelMatrix, glm::vec3(0.002f));
-    renderer->houseShader.SetUniformMat4("model", renderer->houseModelMatrix);
-    renderer->houseShader.SetUniformMat4("view", renderer->mainCamera->GetViewMatrix());
-
-    renderer->houseShader.SetUniformVec3("lightPosition", glm::vec3(0.0f, 5.0f, 0.0f));
-    renderer->houseShader.SetUniformVec3("lightColor", glm::vec3(60.0f, 60.0f, 60.0f));
-    renderer->houseShader.SetUniformVec3("camPos", renderer->mainCamera->Position);
-
-    scene->houseModel.Draw(renderer->houseShader);
-
-    // -------
-
-    // -terrain-
-    glBindVertexArray(scene->terrainVAO);
-
-    renderer->terrainPolygonShader.UseProgram();
+    this->DrawHouse(renderer.get(), scene.get());
+    this->DrawTerrain(renderer.get(), scene.get());
+    this->DrawSkyBox(renderer.get(), scene.get());
     
-    renderer->terrainPolygonShader.SetUniformMat4("model", renderer->terrainModelMatrix);
-    renderer->terrainPolygonShader.SetUniformMat4("view", renderer->mainCamera->GetViewMatrix());
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    
-    // draw mesh
-    const unsigned int NUM_STRIPS = scene->terrainHeight - 1;
-    const unsigned int NUM_VERTS_PER_STRIP = scene->terrainWidth * 2;
-
-    // render the mesh triangle strip by triangle strip - each row at a time
-    for(unsigned int strip = 0; strip < NUM_STRIPS; ++strip)
-    {
-        glDrawElements(GL_TRIANGLE_STRIP,   // primitive type
-            NUM_VERTS_PER_STRIP, // number of indices to render
-            GL_UNSIGNED_INT,     // index data type
-            (void*)(sizeof(unsigned int)
-            * NUM_VERTS_PER_STRIP
-            * strip)); // offset to starting index
-    }
-
-    renderer->terrainShader.UseProgram();
-    renderer->terrainShader.SetUniformMat4("model", renderer->terrainModelMatrix);
-    renderer->terrainShader.SetUniformMat4("view", renderer->mainCamera->GetViewMatrix());
-    renderer->terrainShader.SetUniformVec3("camPos", renderer->mainCamera->Position);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    for(unsigned int strip = 0; strip < NUM_STRIPS; ++strip)
-    {
-        glDrawElements(GL_TRIANGLE_STRIP,   // primitive type
-            NUM_VERTS_PER_STRIP, // number of indices to render
-            GL_UNSIGNED_INT,     // index data type
-            (void*)(sizeof(unsigned int)
-            * NUM_VERTS_PER_STRIP
-            * strip)); // offset to starting index
-    }
-
-    // -------
-
-    // --skybox--
-
-    glDepthFunc(GL_LEQUAL);
-    renderer->skyboxShader.UseProgram();
-    renderer->skyboxShader.SetUniformMat4("view", 
-        glm::mat4(glm::mat3(renderer->mainCamera->GetViewMatrix())));
-    glBindVertexArray(scene->skyboxVao);
-    glBindTexture(GL_TEXTURE_CUBE_MAP, renderer->cubemapTexture);
-    glDrawArrays(GL_TRIANGLES, 0, numOfVerticesInBox);
-    glDepthFunc(GL_LESS);
-    
-    // -------
-
-    // --postprocessing--
-    
-    renderer->postprocessingShaders.at(renderer->currentPostProcShaderIndex).UseProgram();
-    
-    if (renderer->antialiasingOn)
-    {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, renderer->multisampleFbo);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, renderer->intermediateFbo);
-        glBlitFramebuffer(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    }
-    else
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, renderer->intermediateFbo);
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    glBindVertexArray(scene->quadVAO);
-    glDisable(GL_DEPTH_TEST);
-    glBindTexture(GL_TEXTURE_2D, renderer->textureColorBuffer);	// use the color attachment texture as the texture of the quad plane
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-
-    // ------------------
+    this->ApplyPostprocessing(renderer.get(), scene.get());
 
     Gui::ImGuiFrame(window);
     glfwSwapBuffers(window);
@@ -300,4 +201,112 @@ void App::CreateFramebuffers(RenderResources* renderer)
     glBindRenderbuffer(GL_RENDERBUFFER, renderer->rbo);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, WINDOW_WIDTH, WINDOW_HEIGHT);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderer->rbo);
+}
+
+void App::PickFramebuffer(RenderResources* renderer)
+{
+    if (renderer->antialiasingOn)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, renderer->multisampleFbo);
+    }
+    else
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, renderer->intermediateFbo);
+    }
+}
+
+void App::DrawHouse(RenderResources* renderer, SceneResources* scene)
+{
+    renderer->houseShader.UseProgram();
+    renderer->houseModelMatrix = glm::translate(identityMatrix, renderer->terrainPosition);
+    renderer->houseModelMatrix = glm::scale(renderer->houseModelMatrix, glm::vec3(0.002f));
+    renderer->houseShader.SetUniformMat4("model", renderer->houseModelMatrix);
+    renderer->houseShader.SetUniformMat4("view", renderer->mainCamera->GetViewMatrix());
+
+    renderer->houseShader.SetUniformVec3("lightPosition", glm::vec3(0.0f, 5.0f, 0.0f));
+    renderer->houseShader.SetUniformVec3("lightColor", glm::vec3(60.0f, 60.0f, 60.0f));
+    renderer->houseShader.SetUniformVec3("camPos", renderer->mainCamera->Position);
+
+    scene->houseModel.Draw(renderer->houseShader);
+}
+
+void App::DrawTerrain(RenderResources* renderer, SceneResources* scene)
+{
+    glBindVertexArray(scene->terrainVAO);
+
+    renderer->terrainPolygonShader.UseProgram();
+    renderer->terrainPolygonShader.SetUniformMat4("model", renderer->terrainModelMatrix);
+    renderer->terrainPolygonShader.SetUniformMat4("view", renderer->mainCamera->GetViewMatrix());
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    
+    // draw mesh
+    const unsigned int NUM_STRIPS = scene->terrainHeight - 1;
+    const unsigned int NUM_VERTS_PER_STRIP = scene->terrainWidth * 2;
+
+    // render the mesh triangle strip by triangle strip - each row at a time
+    for(unsigned int strip = 0; strip < NUM_STRIPS; ++strip)
+    {
+        glDrawElements(GL_TRIANGLE_STRIP,   // primitive type
+            NUM_VERTS_PER_STRIP, // number of indices to render
+            GL_UNSIGNED_INT,     // index data type
+            (void*)(sizeof(unsigned int)
+            * NUM_VERTS_PER_STRIP
+            * strip)); // offset to starting index
+    }
+
+    renderer->terrainShader.UseProgram();
+    renderer->terrainShader.SetUniformMat4("model", renderer->terrainModelMatrix);
+    renderer->terrainShader.SetUniformMat4("view", renderer->mainCamera->GetViewMatrix());
+    renderer->terrainShader.SetUniformVec3("camPos", renderer->mainCamera->Position);
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    for(unsigned int strip = 0; strip < NUM_STRIPS; ++strip)
+    {
+        glDrawElements(GL_TRIANGLE_STRIP,   // primitive type
+            NUM_VERTS_PER_STRIP, // number of indices to render
+            GL_UNSIGNED_INT,     // index data type
+            (void*)(sizeof(unsigned int)
+            * NUM_VERTS_PER_STRIP
+            * strip)); // offset to starting index
+    }
+}
+
+void App::DrawSkyBox(RenderResources* renderer, SceneResources* scene)
+{
+    glDepthFunc(GL_LEQUAL);
+    renderer->skyboxShader.UseProgram();
+    renderer->skyboxShader.SetUniformMat4("view", 
+        glm::mat4(glm::mat3(renderer->mainCamera->GetViewMatrix())));
+
+    glBindVertexArray(scene->skyboxVao);
+    glBindTexture(GL_TEXTURE_CUBE_MAP, renderer->cubemapTexture);
+    glDrawArrays(GL_TRIANGLES, 0, numOfVerticesInBox);
+    glDepthFunc(GL_LESS);
+}
+
+void App::ApplyPostprocessing(RenderResources* renderer, SceneResources* scene)
+{
+    renderer->postprocessingShaders.at(renderer->currentPostProcShaderIndex).UseProgram();
+    
+    if (renderer->antialiasingOn)
+    {
+        glBindFramebuffer(GL_READ_FRAMEBUFFER, renderer->multisampleFbo);
+        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, renderer->intermediateFbo);
+        glBlitFramebuffer(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    }
+    else
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, renderer->intermediateFbo);
+    }
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glBindVertexArray(scene->quadVAO);
+    glDisable(GL_DEPTH_TEST);
+    glBindTexture(GL_TEXTURE_2D, renderer->textureColorBuffer);	// use the color attachment texture as the texture of the quad plane
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 }

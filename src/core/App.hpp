@@ -36,6 +36,11 @@ private:
     void InitShaders(RenderResources* renderer);
     void InitScene(SceneResources* scene);
     void CreateFramebuffers(RenderResources* renderer);
+    void PickFramebuffer(RenderResources* renderer);
+    void DrawHouse(RenderResources* renderer, SceneResources* scene);
+    void DrawTerrain(RenderResources* renderer, SceneResources* scene);
+    void DrawSkyBox(RenderResources* renderer, SceneResources* scene);
+    void ApplyPostprocessing(RenderResources* renderer, SceneResources* scene);
 public:
     App() = default;
 
